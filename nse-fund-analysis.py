@@ -2,8 +2,7 @@ import pandas as pd
 import plotly.express as px
 from dash import Dash, dcc, html, Input, Output  # pip install dash (version 2.0.0 or higher)
 import datetime as dt
-import numpy as np
-from get_data import get_fund_nav_df, get_index_df
+from get_data import get_fund_nav_df, get_index_df, get_rolling_returns
 from fund_keys import mf_dict, index_dict
 
 end_date = dt.datetime.now().date()
@@ -11,6 +10,8 @@ start_date = end_date - dt.timedelta(days=3*365)
 
 fund_nav_df = get_fund_nav_df(mf_dict, start_date, end_date)
 index_df = get_index_df(index_dict, start_date, end_date)
+
+rolling_returns = get_rolling_returns(fund_nav_df)
 
 app = Dash(__name__)
 
@@ -42,8 +43,8 @@ app.layout = html.Div([
                  ),
     html.Div(id='output_container', children=[]),
     html.Br(),
-    dcc.Graph(id='plot_fund_nav', figure={})
-
+    dcc.Graph(id='plot_fund_nav', figure={}), 
+    dcc.Graph(id='plot_rolling_returns', figure={})
 ])
 
 
@@ -51,7 +52,8 @@ app.layout = html.Div([
 # Connect the Plotly graphs with Dash Components
 @app.callback(
     [Output(component_id='output_container', component_property='children'), 
-    Output(component_id='plot_fund_nav', component_property='figure')],
+    Output(component_id='plot_fund_nav', component_property='figure'), 
+    Output(component_id='plot_rolling_returns', component_property='figure')],
     [Input(component_id='select_mf', component_property='value'), 
     Input(component_id='select_index', component_property='value')]
 )
@@ -67,15 +69,17 @@ def update_graph(fund_selected, index_selected):
 
     merge_df = pd.merge(left=nav_df, right=ind_df, left_index=True, right_index=True)
 
-    # fig = px.line(nav_df.divide(nav_df.iloc[0]) * 100, \
-    #     title='Fund NAV comparison (initial investment Rs 100)', \
-    #         template='ggplot2')
-
-    fig = px.line(merge_df.divide(merge_df.iloc[0]) * 100, \
+    nav_fig = px.line(merge_df.divide(merge_df.iloc[0]) * 100, \
         title='Fund NAV comparison (initial investment Rs 100)', \
             template='ggplot2')
 
-    return container, fig
+    roll_ret_df = rolling_returns.copy()
+    roll_ret_df = roll_ret_df[fund_selected]
+    roll_ret_fig = px.line(roll_ret_df, \
+        title='Rolling returns (Rolling window=365 days)', \
+            template='ggplot2')
+
+    return container, nav_fig, roll_ret_fig
 
 # ------------------------------------------------------------------------------
 if __name__ == '__main__':

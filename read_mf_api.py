@@ -59,28 +59,24 @@ def compare_fund_stats(fund_nav_df, risk_free_rate=0):
     daily_returns = fund_nav_df.pct_change()
     mean = daily_returns.mean() * 248
     std = daily_returns.std() * np.sqrt(248)
-    cumu_return = (fund_nav_df.iloc[-1]/fund_nav_df.iloc[0]) - 1
-    
+    cumu_return = (fund_nav_df.iloc[-1]/fund_nav_df.iloc[0]) - 1    
     sharpe_ratio = (mean - risk_free_rate) / std
-
     downside_deviation = daily_returns[daily_returns<0].dropna().std()*np.sqrt(248)
     sortino_ratio = (mean - risk_free_rate) / downside_deviation
-    cols = ['Cumulative returns', 'Standard deviation', 'Mean returns', 'Downside deviation', 'Sharpe ratio', 'Sortino ratio']
-    stats = [cumu_return, std, mean, downside_deviation, sharpe_ratio, sortino_ratio]
+
+    start_date = fund_nav_df.index[0]
+    end_date = fund_nav_df.index[-1]
+    duration = end_date.year - start_date.year
+    abs_returns = (fund_nav_df.iloc[-1]/ fund_nav_df.iloc[0] - 1) * 100
+    cagr = (np.power((fund_nav_df.iloc[-1]/ fund_nav_df.iloc[0]), (1/duration)) - 1) * 100
+
+    cols = ['Cumulative returns', 'Standard deviation', 'Mean returns', 
+    'Downside deviation', 'Sharpe ratio', 'Sortino ratio', 'Absolute Returns', 'CAGR']
+    stats = [cumu_return, std, mean, downside_deviation, sharpe_ratio, sortino_ratio, abs_returns, cagr]
     fund_stat_df = pd.DataFrame()
     for col, stat in zip(cols, stats):
         fund_stat_df[col] = stat
     return fund_stat_df  
-
-def get_fund_investment_return(fund_nav_df):
-    start_date = fund_nav_df.index[0]
-    end_date = fund_nav_df.index[-1]
-    duration = end_date.year - start_date.year
-    
-    if (duration<1):
-        return 'Absolute returns:\n{}'.format((fund_nav_df.iloc[-1]/ fund_nav_df.iloc[0] - 1) * 100)
-    else:
-        return 'CAGR:\n{}'.format((np.power((fund_nav_df.iloc[-1]/ fund_nav_df.iloc[0]), (1/duration)) - 1) * 100)
 
 def compare_mf_norm(fund_nav_df, initial_investment=100, interval=180):
     fig, ax = prepare_date_fig(interval)
