@@ -14,6 +14,7 @@ index_df = get_index_df(index_dict, start_date, end_date)
 rolling_returns = get_rolling_returns(fund_nav_df)
 
 app = Dash(__name__)
+server = app.server
 
 # ------------------------------------------------------------------------------
 # App layout
